@@ -1,4 +1,4 @@
-# 🧾 Projeto Loja Online com Next.js + Express.js Integrados
+# 🧾 Projeto Loja Online com Next.js + Express.js + MongoDB
 
 Abre o terminal na pasta onde queres adicionar o projeto (nunca numa cloud: Google Drive, OneDrive, ...):
 
@@ -49,110 +49,92 @@ npm run dev
 Cria o ficheiro `server.js` na **raiz do projeto** que integra Express com Next.js:
 
 ```javascript
-// Importação das dependências necessárias
-const express = require('express');     // Framework web para Node.js - cria o servidor HTTP
-const next = require('next');          // Framework React - para renderização e roteamento
-const cors = require('cors');          // Middleware para permitir requisições de diferentes origens
-const fs = require('fs');             // Sistema de ficheiros do Node.js - para ler/escrever arquivos
-
-// Configuração do Next.js
-const dev = process.env.NODE_ENV !== 'production';  // Verifica se está em modo desenvolvimento
-const nextApp = next({ dev });                      // Cria instância do Next.js
-const handle = nextApp.getRequestHandler();         // Handler para processar rotas do Next.js
-
-// Criação da aplicação Express
+const express = require('express');
+const next = require('next');
+const cors = require('cors');
+const fs = require('fs');
+const dev = process.env.NODE_ENV !== 'production';
+const nextApp = next({ dev });
+const handle = nextApp.getRequestHandler();
 const app = express();
-
-// Configuração dos middlewares
-app.use(cors());           // Permite requisições de qualquer origem (frontend pode aceder à API)
-app.use(express.json());   // Permite processar JSON no body das requisições POST/PUT
+app.use(cors());
+app.use(express.json());
 
 // ===== BASE DE DADOS LOCAL =====
-// Ficheiro JSON que funciona como base de dados simples
 const DB_FILE = './db.json';
 
-// Função para ler produtos do ficheiro JSON
 function lerDaBD() {
-  if (!fs.existsSync(DB_FILE)) return [];                    // Se ficheiro não existe, retorna array vazio
-  const data = JSON.parse(fs.readFileSync(DB_FILE, 'utf-8')); // Lê e converte JSON para objeto
-  return data.produtos || [];                                 // Retorna array de produtos ou array vazio
+  if (!fs.existsSync(DB_FILE)) return [];
+  const data = JSON.parse(fs.readFileSync(DB_FILE, 'utf-8'));
+  return data.produtos || [];
 }
 
-// Função para guardar produtos no ficheiro JSON
 function guardarNaBD(produtos) {
-  const data = { produtos };                                   // Cria objeto com array de produtos
-  fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));   // Escreve no ficheiro com formatação (2 espaços)
+  const data = { produtos };
+  fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
 }
 
 // ===== ROTAS DA API REST =====
 
 // GET /api/produtos - Carregar todos os produtos
 app.get('/api/produtos', (req, res) => {
-  res.json(lerDaBD());  // Retorna todos os produtos em formato JSON
+  res.json(lerDaBD());
 });
 
 // GET /api/produtos/:id - Carregar um produto específico por ID
 app.get('/api/produtos/:id', (req, res) => {
-  const produtos = lerDaBD();                               // Carrega todos os produtos
-  const produto = produtos.find(p => p.id === parseInt(req.params.id)); // Procura produto pelo ID
-  if (!produto) return res.status(404).json({ erro: 'Produto não encontrado' }); // Se não encontrar, retorna erro 404
-  res.json(produto);  // Retorna o produto encontrado
+  const produtos = lerDaBD();
+  const produto = produtos.find(p => p.id === parseInt(req.params.id));
+  if (!produto) return res.status(404).json({ erro: 'Produto não encontrado' });
+  res.json(produto);
 });
 
 // POST /api/produtos - Criar novo produto
 app.post('/api/produtos', (req, res) => {
-  const produtos = lerDaBD();                        // Carrega produtos existentes
-  const { nome, preco } = req.body;        // Extrai dados do body da requisição
+  const produtos = lerDaBD();
+  const { nome, preco } = req.body;
   
-  // Cria novo produto com ID auto-incrementado
   const novoProduto = {
-    id: produtos.length ? produtos[produtos.length - 1].id + 1 : 1,  // ID = último ID + 1, ou 1 se for o primeiro
+    id: produtos.length ? produtos[produtos.length - 1].id + 1 : 1,
     nome,
-    preco: parseFloat(preco),      // Converte string para número decimal
+    preco: parseFloat(preco),
   };
   
-  produtos.push(novoProduto);      // Adiciona ao array
-  guardarNaBD(produtos);       // Guarda no ficheiro
-  res.status(201).json(novoProduto); // Retorna produto criado com status 201 (Created)
+  produtos.push(novoProduto);
+  guardarNaBD(produtos);
+  res.status(201).json(novoProduto);
 });
 
 // PUT /api/produtos/:id - Atualizar produto existente
 app.put('/api/produtos/:id', (req, res) => {
-  const produtos = lerDaBD();                                    // Carrega todos os produtos
-  const index = produtos.findIndex(p => p.id === parseInt(req.params.id)); // Encontra índice do produto
-  if (index === -1) return res.status(404).json({ erro: 'Produto não encontrado' }); // Se não encontrar, erro 404
+  const produtos = lerDaBD();
+  const index = produtos.findIndex(p => p.id === parseInt(req.params.id));
+  if (index === -1) return res.status(404).json({ erro: 'Produto não encontrado' });
   
-  // Atualiza produto mantendo dados originais + dados novos (spread operator)
   produtos[index] = { ...produtos[index], ...req.body };
 
-  guardarNaBD(produtos);       // Guarda alterações no ficheiro
-  res.json(produtos[index]);       // Retorna produto atualizado
+  guardarNaBD(produtos);
+  res.json(produtos[index]);
 });
 
 // DELETE /api/produtos/:id - Eliminar produto
 app.delete('/api/produtos/:id', (req, res) => {
-  let produtos = lerDaBD();                                      // Carrega todos os produtos
-  const index = produtos.findIndex(p => p.id === parseInt(req.params.id)); // Encontra índice do produto
-  if (index === -1) return res.status(404).json({ erro: 'Produto não encontrado' }); // Se não encontrar, erro 404
-  
-  produtos.splice(index, 1);         // Remove produto do array (splice remove 1 elemento no índice)
-  guardarNaBD(produtos);         // Guarda array atualizado no ficheiro
-  res.json({ mensagem: 'Produto eliminado com sucesso' }); // Confirma eliminação
-});
-
-// ===== INTEGRAÇÃO NEXT.JS + EXPRESS =====
-
-// Middleware que passa todas as rotas não-API para o Next.js
-// Qualquer rota que não seja /api/* será processada pelo Next.js (páginas React)
-app.use((req, res) => {
-  return handle(req, res);  // Next.js processa a rota e renderiza a página correspondente
+  let produtos = lerDaBD();
+  const index = produtos.findIndex(p => p.id === parseInt(req.params.id));
+  if (index === -1) return res.status(404).json({ erro: 'Produto não encontrado' });
+  produtos.splice(index, 1);
+  guardarNaBD(produtos);
+  res.json({ mensagem: 'Produto eliminado com sucesso' });
 });
 
 // ===== INICIALIZAÇÃO DO SERVIDOR =====
 
-const PORT = process.env.PORT || 3000;  // Usa porta do ambiente ou 3000 por defeito
+app.use((req, res) => {
+  return handle(req, res);
+});
 
-// Prepara o Next.js e depois inicia o servidor Express
+const PORT = process.env.PORT || 3000;
+
 nextApp.prepare().then(() => {
   app.listen(PORT, () => {
     console.log(`🚀 Servidor Next.js + Express a correr em http://localhost:${PORT}`);
@@ -258,7 +240,6 @@ export default function AdicionarProduto({ isOpen, onClose, onSuccess }) {
 
     try {
       await adicionarProdutoAPI(formData)
-      alert('Produto adicionado com sucesso!')
       setFormData({ nome: '', preco: '' })
       onSuccess()
       onClose()
@@ -349,7 +330,6 @@ export default function EditarProduto({ isOpen, onClose, onSuccess, produto }) {
 
     try {
       await atualizarProdutoAPI(produto.id, formData)
-      alert('Produto atualizado com sucesso!')
       onSuccess()
       onClose()
     } catch (error) {
@@ -434,7 +414,7 @@ export default function App({ Component, pageProps }) {
 Cria um serviço centralizado para todas as chamadas à API:
 
 ```javascript
-// Carregar todos os produtos
+// GET /api/produtos - Carregar todos os produtos
 export async function carregarProdutosAPI() {
   try {
     const response = await fetch('/api/produtos')
@@ -453,7 +433,7 @@ export async function carregarProdutosAPI() {
   }
 }
 
-// Carregar um produto por ID
+// GET /api/produtos/:id - Carregar um produto específico por ID
 export async function carregarProdutoPorIdAPI(id) {
   try {
     const response = await fetch(`/api/produtos/${id}`)
@@ -472,7 +452,7 @@ export async function carregarProdutoPorIdAPI(id) {
   }
 }
 
-// Adicionar novo produto
+// POST /api/produtos - Criar novo produto
 export async function adicionarProdutoAPI(dadosProduto) {
   try {
     const response = await fetch('/api/produtos', {
@@ -497,7 +477,7 @@ export async function adicionarProdutoAPI(dadosProduto) {
   }
 }
 
-// Atualizar produto existente
+// PUT /api/produtos/:id - Atualizar produto existente
 export async function atualizarProdutoAPI(id, dadosProduto) {
   try {
     const response = await fetch(`/api/produtos/${id}`, {
@@ -522,7 +502,7 @@ export async function atualizarProdutoAPI(id, dadosProduto) {
   }
 }
 
-// Eliminar produto
+// DELETE /api/produtos/:id - Eliminar produto
 export async function eliminarProdutoAPI(id) {
   try {
     const response = await fetch(`/api/produtos/${id}`, { 
@@ -560,12 +540,10 @@ export default function Produtos() {
   const [showEditModal, setShowEditModal] = useState(false)
   const [produtoToEdit, setProdutoToEdit] = useState(null)
 
-  // Carregar produtos quando a página abre
   useEffect(() => {
     carregarProdutos()
   }, [])
 
-  // Função para carregar produtos
   async function carregarProdutos() {
     try {
       const data = await carregarProdutosAPI()
@@ -672,20 +650,21 @@ export default function ProdutoDetalhes() {
   const [produto, setProduto] = useState(null)
 
   useEffect(() => {
-    const carregarProduto = async () => {
-      if (!id) return
-      
-      try {
-        const data = await carregarProdutoPorIdAPI(id)
-        setProduto(data)
-      } catch (error) {
-        console.error(error)
-        alert('Erro ao carregar produto')
-      }
-    }
-    
     carregarProduto()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
+
+  async function carregarProduto() {
+    if (!id) return
+    
+    try {
+      const data = await carregarProdutoPorIdAPI(id)
+      setProduto(data)
+    } catch (error) {
+      console.error(error)
+      alert('Erro ao carregar produto')
+    }
+  }
 
   if (!produto) return <div className="text-center">Produto não encontrado</div>
 
@@ -800,3 +779,330 @@ Se quiseres otimizar o `nodemon` para não reiniciar desnecessariamente:
 * ✅ **Design responsivo** com Tailwind CSS
 * ✅ **Hot reload** tanto para frontend como backend
 
+
+---
+
+
+# 🚀 **MIGRAÇÃO PARA MONGODB ATLAS**
+
+### **Como mudar do `db.json` para MongoDB Atlas**
+
+A aplicação foi migrada de uma base de dados local (ficheiro JSON) para uma base de dados na nuvem (MongoDB Atlas) com as seguintes melhorias:
+
+#### **db.json**:
+- Dados armazenados em ficheiro local `db.json`
+- IDs simples (1, 2, 3, 4)
+- Sem validações de dados
+- Sem timestamps automáticos
+- Limitado a um servidor local
+
+#### **MongoDB Atlas**:
+- Dados na nuvem com replicação automática
+- IDs MongoDB (`_id` ObjectId)
+- Validações automáticas via Mongoose
+- Timestamps (`createdAt`, `updatedAt`) automáticos
+- Escalável e acessível globalmente
+
+---
+
+### **📋 Passos da migração**
+
+#### **1️⃣ Instalação de dependências**
+```bash
+npm install mongodb mongoose dotenv
+```
+
+#### **2️⃣ Configuração do ambiente (.env)**
+```env
+MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/database?retryWrites=true&w=majority
+NODE_ENV=development
+PORT=3000
+```
+
+#### **3️⃣ Modelo Mongoose (models/Produto.js)**
+```javascript
+const mongoose = require('mongoose');
+
+const produtoSchema = new mongoose.Schema({
+  nome: { type: String, required: true },
+  preco: { type: Number, required: true }
+}, {
+  versionKey: false
+});
+
+module.exports = mongoose.models.Produto || mongoose.model('Produto', produtoSchema);
+```
+
+#### **4️⃣ Conexão MongoDB (lib/mongodb.js)**
+```javascript
+const mongoose = require('mongoose');
+
+const MONGODB_URI = process.env.MONGODB_URI;
+
+if (!MONGODB_URI) {
+  throw new Error('Por favor define a variável MONGODB_URI no ficheiro .env');
+}
+
+let cached = global.mongoose;
+
+if (!cached) {
+  cached = global.mongoose = { conn: null, promise: null };
+}
+
+async function connectDB() {
+  if (cached.conn) return cached.conn;
+
+  if (!cached.promise) {
+    const opts = { bufferCommands: false };
+    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
+      console.log('Conectado ao MongoDB Atlas');
+      return mongoose;
+    });
+  }
+
+  try {
+    cached.conn = await cached.promise;
+  } catch (e) {
+    cached.promise = null;
+    throw e;
+  }
+
+  return cached.conn;
+}
+
+module.exports = connectDB;
+```
+
+#### **5️⃣ Atualização do server.js**
+
+```javascript
+const express = require('express');
+const next = require('next');
+const cors = require('cors');
+require('dotenv').config();
+const connectDB = require('./lib/mongodb');
+const Produto = require('./models/Produto');
+const dev = process.env.NODE_ENV !== 'production';
+const nextApp = next({ dev });
+const handle = nextApp.getRequestHandler();
+const app = express();
+app.use(cors());
+app.use(express.json());
+connectDB();
+
+
+
+// ===== ROTAS DA API REST =====
+
+// GET /api/produtos - Carregar todos os produtos
+app.get('/api/produtos', async (req, res) => {
+  try {
+    const produtos = await Produto.find();  // Busca todos os produtos no MongoDB
+    res.json(produtos);
+  } catch (error) {
+    console.error('Erro ao carregar produtos:', error);
+    res.status(500).json({ erro: 'Erro interno do servidor' });
+  }
+});
+
+// GET /api/produtos/:id - Carregar um produto específico por ID
+app.get('/api/produtos/:id', async (req, res) => {
+  try {
+    const produto = await Produto.findById(req.params.id);  // Busca produto pelo ID no MongoDB
+    if (!produto) return res.status(404).json({ erro: 'Produto não encontrado' });
+    res.json(produto);
+  } catch (error) {
+    console.error('Erro ao carregar produto:', error);
+    res.status(500).json({ erro: 'Erro interno do servidor' });
+  }
+});
+
+// POST /api/produtos - Criar novo produto
+app.post('/api/produtos', async (req, res) => {
+  try {
+    const { nome, preco } = req.body;  // Extrai dados do body da requisição
+    
+    const novoProduto = new Produto({
+      nome,
+      preco: parseFloat(preco)
+    });
+    
+    const produtoSalvo = await novoProduto.save();  // Guarda no MongoDB
+    res.status(201).json(produtoSalvo);
+  } catch (error) {
+    console.error('Erro ao criar produto:', error);
+    res.status(500).json({ erro: 'Erro interno do servidor' });
+  }
+});
+
+// PUT /api/produtos/:id - Atualizar produto existente
+app.put('/api/produtos/:id', async (req, res) => {
+  try {
+    const produto = await Produto.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true, runValidators: true }  // Retorna documento atualizado e executa validações
+    );
+    
+    if (!produto) return res.status(404).json({ erro: 'Produto não encontrado' });
+    res.json(produto);
+  } catch (error) {
+    console.error('Erro ao atualizar produto:', error);
+    res.status(500).json({ erro: 'Erro interno do servidor' });
+  }
+});
+
+// DELETE /api/produtos/:id - Eliminar produto
+app.delete('/api/produtos/:id', async (req, res) => {
+  try {
+    const produto = await Produto.findByIdAndDelete(req.params.id);
+    
+    if (!produto) return res.status(404).json({ erro: 'Produto não encontrado' });
+    res.json({ mensagem: 'Produto eliminado com sucesso' });
+  } catch (error) {
+    console.error('Erro ao eliminar produto:', error);
+    res.status(500).json({ erro: 'Erro interno do servidor' });
+  }
+});
+
+
+
+// ===== INICIALIZAÇÃO DO SERVIDOR =====
+
+app.use((req, res) => {
+  return handle(req, res);
+});
+
+const PORT = process.env.PORT || 3000;
+
+nextApp.prepare().then(() => {
+  app.listen(PORT, () => {
+    console.log(`🚀 Servidor Next.js + Express a correr em http://localhost:${PORT}`);
+    console.log(`📡 API disponível em http://localhost:${PORT}/api/produtos`);
+  });
+});
+```
+
+
+#### **6️⃣ Script de migração (migrate.js)**
+```javascript
+require('dotenv').config();
+const fs = require('fs');
+const connectDB = require('./lib/mongodb');
+const Produto = require('./models/Produto');
+
+async function migrateData() {
+  try {
+    await connectDB();
+    
+    const data = JSON.parse(fs.readFileSync('./db.json', 'utf-8'));
+    const produtos = data.produtos || [];
+    
+    await Produto.deleteMany({}); // Limpar coleção
+    
+    for (const produto of produtos) {
+      const novoProduto = new Produto({
+        nome: produto.nome,
+        preco: parseFloat(produto.preco)
+      });
+      await novoProduto.save();
+    }
+    
+    // Criar backup
+    const backupName = `db_backup_${Date.now()}.json`;
+    fs.copyFileSync('./db.json', `./${backupName}`);
+    
+    console.log('Migração concluída!');
+    process.exit(0);
+  } catch (error) {
+    console.error('Erro na migração:', error);
+    process.exit(1);
+  }
+}
+
+migrateData();
+```
+
+#### **7️⃣ Atualização do frontend**
+
+**Mudança de `produto.id` para `produto._id` nos ficheiros todos**:
+```javascript
+// ANTES
+<Link href={`/produto/${produto.id}`}>
+  Ver Produto
+</Link>
+
+// DEPOIS  
+<Link href={`/produto/${produto._id}`}>
+  Ver Produto
+</Link>
+```
+
+#### **8️⃣ Configuração do MongoDB Atlas**
+
+1. **Criar conta** no [MongoDB Atlas](https://www.mongodb.com/atlas)
+2. **Criar cluster** (template gratuito)
+3. **Configurar acesso**:
+   - Adicionar IP atual à lista de acesso
+   - Criar utilizador de base de dados e copiar palavra-pass
+4. **Copiar string de conexão** e colar no `.env` com a palavra-pass copiada antes.
+
+#### **9️⃣ Execução da migração**
+```bash
+# Executar script de migração
+npm run migrate
+
+# Remover ficheiro JSON original (backup criado automaticamente)
+rm db.json
+
+# Remover script de migração (já não é necessário)
+rm migrate.js
+
+# Remover backups antigos (opcional)
+rm db_backup_*.json
+
+# Testar aplicação
+npm run dev
+```
+
+---
+
+### **Gestão futura de dados**
+
+**A partir de agora, toda a gestão é feita diretamente no MongoDB Atlas**:
+
+#### **Adicionar produtos**:
+- **Via aplicação**: Usa o botão "Adicionar Produto"
+- **Via Atlas**: Collections → produtos → Insert Document
+
+#### **Editar produtos**:
+- **Via aplicação**: Botão "Editar" na listagem
+- **Via Atlas**: Clica no produto → Edit
+
+#### **Eliminar produtos**:
+- **Via aplicação**: Botão "Eliminar" 
+- **Via Atlas**: Clica no produto → Delete
+
+#### **Visualizar dados**:
+- **Via aplicação**: `http://localhost:3000/api/produtos`
+- **Via Atlas**: Collections → produtos
+
+---
+
+### **📊 Estrutura final limpa**
+
+**Ficheiros que permanece**:
+```
+├── .env                   # Configurações ambiente
+├── lib/mongodb.js         # Conexão MongoDB  
+├── models/Produto.js      # Modelo Mongoose
+├── server.js              # Servidor (atualizado)
+├── src/                   # Frontend (atualizado)
+└── package.json           # Dependencies
+```
+
+**O que foi removido:**:
+- ❌ `db.json` (dados agora no Atlas)
+- ❌ Funções `lerDaBD()` e `guardarNaBD()`
+- ❌ Importação `fs` (file system)
+- ❌ Constante `DB_FILE`

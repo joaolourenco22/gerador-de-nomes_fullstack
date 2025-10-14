@@ -91,3 +91,131 @@ A aplicação inclui as seguintes páginas:
 
 # Tens um tutorial para fazeres este projeto do zero em `next_com_express.md`
 
+
+
+
+
+produtos.js
+
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
+import AdicionarProduto from '@/components/AdicionarNomesComponente'
+import { carregarNomesAPI } from '@/services/api'
+
+export default function Produtos() {
+  const [produtos, setProdutos] = useState([])
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [produtoToEdit, setProdutoToEdit] = useState(null)
+
+  // Carregar produtos quando a página abre
+  useEffect(() => {
+    carregarProdutos()
+  }, [])
+
+  // Função para carregar produtos
+  async function carregarNomes() {
+    try {
+      const data = await carregarNomesAPI()
+      setNomes(data)
+    } catch (error) {
+      alert('Erro ao carregar nomes')
+    }
+  }
+
+  return (
+    <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">🧾 Gestão de Nomes</h1>
+          <p className="text-gray-600">Gerencie todos os nomes da sua loja</p>
+        </div>
+        <button onClick={() => setShowAddModal(true)} className="bg-white border border-blue-600 text-blue-600 px-4 py-2 rounded hover:bg-blue-50">
+          ➕ Adicionar Produto
+        </button>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="min-w-full bg-white">
+          <thead className="bg-gray-100">
+            <tr>
+              <th className="py-3 px-4 text-left font-semibold text-gray-700">ID</th>
+              <th className="py-3 px-4 text-left font-semibold text-gray-700">Nome</th>
+              <th className="py-3 px-4 text-left font-semibold text-gray-700">Preço</th>
+              <th className="py-3 px-4 text-left font-semibold text-gray-700">Ações</th>
+            </tr>
+          </thead>
+          <tbody>
+            {produtos.map(produto => (
+              <tr key={produto._id} className="border-b hover:bg-gray-50">
+                <td className="py-3 px-4 text-gray-900">{produto._id}</td>
+                <td className="py-3 px-4 text-gray-900 font-medium">{produto.nome}</td>
+                <td className="py-3 px-4 text-blue-600 font-bold">€{produto.preco}</td>
+                <td className="py-3 px-4">
+                  <div className="flex space-x-2">
+                    <Link href={`/produto/${produto._id}`} className="bg-white border border-blue-600 text-blue-600 px-3 py-1 rounded text-sm hover:bg-blue-50">
+                      Ver
+                    </Link>
+
+                    
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  )
+}
+
+
+
+[id]
+
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/router'
+import Link from 'next/link'
+import { carregarProdutoPorIdAPI } from '@/services/api'
+
+export default function ProdutoDetalhes() {
+  const router = useRouter()
+  const { id } = router.query
+  const [produto, setProduto] = useState(null)
+
+  useEffect(() => {
+    const carregarProduto = async () => {
+      if (!id) return
+      
+      try {
+        const data = await carregarProdutoPorIdAPI(id)
+        setProduto(data)
+      } catch (error) {
+        console.error(error)
+        alert('Erro ao carregar produto')
+      }
+    }
+    
+    carregarProduto()
+  }, [id])
+
+  if (!produto) return <div className="text-center">Produto não encontrado</div>
+
+  return (
+    <div className="bg-white rounded-lg shadow-md p-6">
+      <Link href="/produtos" className="text-blue-600 hover:underline mb-4 inline-block">
+        ← Voltar aos Produtos
+      </Link>
+
+      <div className="max-w-2xl mx-auto text-center">
+        <h1 className="text-4xl font-bold text-gray-900 mb-4">{produto.nome}</h1>
+        <p className="text-3xl font-bold text-blue-600 mb-6">€{produto.preco}</p>
+        
+        <div className="bg-gray-50 rounded-lg p-4 mb-6">
+          <p className="text-gray-700">ID do Produto: <span className="font-semibold">{produto._id}</span></p>
+        </div>
+      </div>
+    </div>
+  )
+}

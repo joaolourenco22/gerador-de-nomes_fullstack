@@ -3,7 +3,9 @@ const next = require('next');
 const cors = require('cors');
 require('dotenv').config();
 const connectDB = require('./lib/mongodb');
-const Produto = require('./models/Produto');
+const Nome = require('./models/Nome');
+const Apelido = require('./models/Apelido');
+const Historico = require('./models/Historico');
 const dev = process.env.NODE_ENV !== 'production';
 const nextApp = next({ dev });
 const handle = nextApp.getRequestHandler();
@@ -16,73 +18,86 @@ connectDB();
 
 // ===== ROTAS DA API REST =====
 
-// GET /api/produtos - Carregar todos os produtos
-app.get('/api/produtos', async (req, res) => {
+// GET /api/nomes - Carregar todos os nomes
+app.get('/api/nomes', async (req, res) => {
   try {
-    const produtos = await Produto.find();  // Busca todos os produtos no MongoDB
-    res.json(produtos);
+    const nomes = await Nome.find();  // Busca todos os nomes no MongoDB
+    res.json(nomes);
   } catch (error) {
     console.error('Erro ao carregar produtos:', error);
     res.status(500).json({ erro: 'Erro interno do servidor' });
   }
 });
 
-// GET /api/produtos/:id - Carregar um produto específico por ID
-app.get('/api/produtos/:id', async (req, res) => {
+// GET /api/apelidos - Carregar todos os apelidos
+app.get('/api/apelidos', async (req, res) => {
   try {
-    const produto = await Produto.findById(req.params.id);  // Busca produto pelo ID no MongoDB
-    if (!produto) return res.status(404).json({ erro: 'Produto não encontrado' });
-    res.json(produto);
+    const apelidos = await Apelido.find();  // Busca todos os apelidos no MongoDB
+    res.json(apelidos);
   } catch (error) {
-    console.error('Erro ao carregar produto:', error);
+    console.error('Erro ao carregar produtos:', error);
     res.status(500).json({ erro: 'Erro interno do servidor' });
   }
 });
 
-// POST /api/produtos - Criar novo produto
-app.post('/api/produtos', async (req, res) => {
+
+// POST /api/nomes - Criar novo nome
+app.post('/api/nomes', async (req, res) => {
   try {
-    const { nome, preco } = req.body;  // Extrai dados do body da requisição
-    
-    const novoProduto = new Produto({
-      nome,
-      preco: parseFloat(preco)
+    const { nome } = req.body;  // Extrai dados do body da requisição
+
+    const novoNome = new Nome({
+      nome
     });
-    
-    const produtoSalvo = await novoProduto.save();  // Guarda no MongoDB
-    res.status(201).json(produtoSalvo);
+
+    const nomeSalvo = await novoNome.save();  // Guarda no MongoDB
+    res.status(201).json(nomeSalvo);
   } catch (error) {
-    console.error('Erro ao criar produto:', error);
+    console.error('Erro ao criar nome:', error);
     res.status(500).json({ erro: 'Erro interno do servidor' });
   }
 });
 
-// PUT /api/produtos/:id - Atualizar produto existente
-app.put('/api/produtos/:id', async (req, res) => {
+// POST /api/apelidos - Criar novo apelido
+app.post('/api/apelidos', async (req, res) => {
   try {
-    const produto = await Produto.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }  // Retorna documento atualizado e executa validações
-    );
-    
-    if (!produto) return res.status(404).json({ erro: 'Produto não encontrado' });
-    res.json(produto);
+    const { apelido } = req.body;  // Extrai dados do body da requisição
+
+    const novoApelido = new Apelido({
+      apelido
+    });
+
+    const apelidoSalvo = await novoApelido.save();  // Guarda no MongoDB
+    res.status(201).json(apelidoSalvo);
   } catch (error) {
-    console.error('Erro ao atualizar produto:', error);
+    console.error('Erro ao criar apelido:', error);
     res.status(500).json({ erro: 'Erro interno do servidor' });
   }
 });
 
-// DELETE /api/produtos/:id - Eliminar produto
-app.delete('/api/produtos/:id', async (req, res) => {
+// POST /api/historico - Criar novo histórico (nome completo)
+app.post('/api/historico', async (req, res) => {
   try {
-    const produto = await Produto.findByIdAndDelete(req.params.id);
-    
-    if (!produto) return res.status(404).json({ erro: 'Produto não encontrado' });
-    res.json({ mensagem: 'Produto eliminado com sucesso' });
+    const { nomeCompleto } = req.body;  // Extrai dados do body da requisição
+
+    const novoHistorico = new Historico({
+      nomeCompleto: nomeCompleto
+    });
+
+    const historicoSalvo = await novoHistorico.save();  // Guarda no MongoDB
+    res.status(201).json(historicoSalvo);
   } catch (error) {
-    console.error('Erro ao eliminar produto:', error);
+    console.error('Erro ao criar histórico:', error);
+    res.status(500).json({ erro: 'Erro interno do servidor' });
+  }
+});
+// GET /api/historico - Carregar todos os históricos (nomes completos)
+app.get('/api/historico', async (req, res) => {
+  try {
+    const historicos = await Historico.find();  // Busca todos os históricos no MongoDB
+    res.json(historicos);
+  } catch (error) {
+    console.error('Erro ao carregar históricos:', error);
     res.status(500).json({ erro: 'Erro interno do servidor' });
   }
 });
