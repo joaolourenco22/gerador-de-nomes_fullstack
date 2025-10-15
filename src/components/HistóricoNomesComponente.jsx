@@ -4,15 +4,28 @@ import { carregarHistoricoAPI } from '@/services/api';
 export default function HistoricoNomesComponente() {
   const [historico, setHistorico] = useState([]);
 
-  useEffect(() => {
-    async function fetchHistorico() {
-      const dados = await carregarHistoricoAPI();
-      setHistorico(dados);
-    }
+  async function fetchHistorico() {
+    const dados = await carregarHistoricoAPI();
+    setHistorico(dados);
+  }
 
+  useEffect(() => {
     fetchHistorico();
   }, []);
 
+  useEffect(() => {
+    fetchHistorico();
+
+    const handleHistoricoAtualizado = () => {
+      fetchHistorico();
+    };
+
+    window.addEventListener('historicoAtualizado', handleHistoricoAtualizado);
+
+    return () => {
+      window.removeEventListener('historicoAtualizado', handleHistoricoAtualizado);
+    };
+  }, []);
 
   return (
     <div>

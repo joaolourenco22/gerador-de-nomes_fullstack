@@ -21,7 +21,7 @@ connectDB();
 // GET /api/nomes - Carregar todos os nomes
 app.get('/api/nomes', async (req, res) => {
   try {
-    const nomes = await Nome.find();  // Busca todos os nomes no MongoDB
+    const nomes = await Nome.find().sort({ _id: -1 });  // Busca todos os nomes no MongoDB
     res.json(nomes);
   } catch (error) {
     console.error('Erro ao carregar produtos:', error);
@@ -32,7 +32,7 @@ app.get('/api/nomes', async (req, res) => {
 // GET /api/apelidos - Carregar todos os apelidos
 app.get('/api/apelidos', async (req, res) => {
   try {
-    const apelidos = await Apelido.find();  // Busca todos os apelidos no MongoDB
+    const apelidos = await Apelido.find().sort({ _id: -1 });  // Busca todos os apelidos no MongoDB
     res.json(apelidos);
   } catch (error) {
     console.error('Erro ao carregar produtos:', error);
@@ -94,7 +94,7 @@ app.post('/api/historico', async (req, res) => {
 // GET /api/historico - Carregar todos os históricos (nomes completos)
 app.get('/api/historico', async (req, res) => {
   try {
-    const historicos = await Historico.find();  // Busca todos os históricos no MongoDB
+    const historicos = await Historico.find().sort({ criadoEm: -1 });  // Busca todos os históricos no MongoDB
     res.json(historicos);
   } catch (error) {
     console.error('Erro ao carregar históricos:', error);

@@ -10,6 +10,7 @@ export default function AdicionarApelidosComponente() {
     try {
       await adicionarApelidosAPI({ apelido })
       setApelido('')
+      await carregarApelidos()
     } catch (error) {
       alert('Erro ao adicionar apelido')
     }

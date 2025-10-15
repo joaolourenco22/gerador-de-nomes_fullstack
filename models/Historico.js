@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const historicoSchema = new mongoose.Schema({
   nomeCompleto: { type: String, required: true },
-  criadoEm: { type: Date, required: true }
+  criadoEm: { type: Date, default: Date.now }
 }, {
   versionKey: false
 });

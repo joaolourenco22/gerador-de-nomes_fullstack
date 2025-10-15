@@ -11,11 +11,14 @@ export default function Home() {
       <h1 className="text-4xl font-bold text-gray-800 mb-6">
         Gerador de Nomes e Apelidos
       </h1>
-      
-      <AdicionarNomeComponente />
-      <AdicionarApelidoComponente />
-      <GerarNomeCompletoComponente />
-      <HistoricoNomesComponente />
+      <div>
+        <AdicionarNomeComponente />
+        <AdicionarApelidoComponente />
+      </div>
+      <div>
+        <GerarNomeCompletoComponente />
+        <HistoricoNomesComponente />
+      </div>
     </div>
   );
 }

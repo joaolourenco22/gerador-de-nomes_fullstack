@@ -10,6 +10,7 @@ export default function AdicionarNomeComponente() {
     try {
       await adicionarNomesAPI({ nome })
       setNome('')
+      await carregarNomes()
     } catch (error) {
       alert('Erro ao adicionar nome')
     }
